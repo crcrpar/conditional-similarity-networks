@@ -1,9 +1,7 @@
 import argparse
-import json
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+from datetime import datetime as dt
 import os
+from six.moves import cPickle as pickle
 import subprocess
 from tqdm import tqdm
 
@@ -55,7 +53,7 @@ def accuracy_id(dista, distb, c, c_id):
     return ((pred > 0) * (c.cpu().data == c_id)).sum() * 1.0 / (c.cpu().data == c_id).sum()
 
 
-def save_ckpt(args, state, is_best=True, filename='ckpt.pth'):
+def save_ckpt(root, is_best=True, filename='ckpt.pth'):
     root = os.path.join('runs, {}'.format(args.name))
     if not os.path.exists(root):
         os.makedirs(root)
@@ -287,8 +285,12 @@ def main():
         print('accuracy: {}, loss: {}'.format(test_acc.avg, test_loss.avg))
         sys.exit()
 
+    root = os.path.join(args.out, dt.now().strftime('%m%d_%H%M'))
+    if not os.path.exists(root):
+        os.makedirs(root)
     best_acc = .0
     log = dict()
+    start_time = dt.now()
     for epoch in tqdm(range(args.start_epoch, args.epochs + 1), desc='total'):
         adjust_lr(args, optimizer, epoch)
         loss_acc_log = train(args, train_loader, triplet_net,
@@ -302,10 +304,18 @@ def main():
 
         is_best = accs.avg > best_acc
         best_acc = max(accs.avg, best_acc)
-        save_ckpt(args, triplet_net.state_dict(), is_best)
+        save_ckpt(root, triplet_net.state_dict(), is_best)
 
-    print('...finished.')
-    save_ckpt(args, triplet_net.state_dict(), filename='model.pth')
+    end_time = dt.now()
+    print('\ntraining finished.')
+    print('started at {}, ended at {}, duration is {} hours'.format(
+        start_time.strftime('%m%d, %H:%M'), end_time.strftime('%m%d, %H:%M'),
+        (end_time - start_time).total_seconds() / 3600.))
+    save_ckpt(root, triplet_net.state_dict(), filename='model.pth')
+    log_filepath = os.path.join(root, 'log.pkl')
+    with open(log_filepath, 'wb') as f:
+        pickle.dump(log, f)
+    print('log files saved at {}'.format(log_filepath))
 
 
 if __name__ == '__main__':
