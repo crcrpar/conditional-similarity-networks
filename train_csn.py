@@ -281,7 +281,7 @@ def main():
     optimizer = optim.Adam(parameters, lr=args.lr)
     n_param = sum([p.data.nelement() for p in triplet_net.parameters()])
     print('# of parameters: {}'.format(n_param))
-    print('='*50)
+    print('\n\n')
 
     if args.test:
         import sys
