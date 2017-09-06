@@ -1,5 +1,8 @@
-from __future__ import print_function
 import argparse
+import json
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import os
 import subprocess
 from tqdm import tqdm
@@ -8,8 +11,6 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import transforms as T
 
@@ -76,6 +77,7 @@ def train(args, train_loader, triplet_net, criterion, optimizer, epoch):
     accs = AverageMeter()
     emb_norms = AverageMeter()
     mask_norms = AverageMeter()
+    loss_acc_log = {'loss': list(), 'acc': list()}
 
     for batch_idx, (data1, data2, data3, c) in tqdm(enumerate(train_loader), desc='training loop'):
         if args.cuda:
@@ -111,6 +113,9 @@ def train(args, train_loader, triplet_net, criterion, optimizer, epoch):
         loss.backward()
         optimizer.step()
 
+        loss_acc_log['loss'].append(losses.val)
+        loss_acc_log['acc'].append(accs.val)
+
         if batch_idx * args.log_interval == 0:
             tqdm.write('Epoch: {} [{}/{}]\t'
                        'Loss: {:.4f} ({:.4f})\t'
@@ -120,6 +125,7 @@ def train(args, train_loader, triplet_net, criterion, optimizer, epoch):
                            len(train_loader.dataset), losses.val, losses.avg,
                            100. * accs.val, 100. * accs.avg, emb_norms.val,
                            emb_norms.avg))
+        return loss_acc_log
 
 
 def test(args, conditions, test_loader, triplet_net, criterion, epoch):
@@ -256,7 +262,7 @@ def main():
         triplet_net.cuda()
 
     if args.resume:
-        is os.path.isfile(args.resume):
+        if os.path.isfile(args.resume):
             print("=> loading checkpoint '{}'".format(args.resume))
             checkpoint = torch.load(args.resume)
             args.start_epoch = checkpoint['epoch']
@@ -272,24 +278,34 @@ def main():
     criterion = torch.nn.MarginRankingLoss(margin=args.margin)
     parameters = filter(lambda p: p.requires_grad, triplet_net.parameters())
     optimizer = optim.Adam(parameters, lr=args.lr)
-    n_param = sum([p.data.nelement() for p i triplet_net.parameters()])
+    n_param = sum([p.data.nelement() for p in triplet_net.parameters()])
     print('# of parameters: {}'.format(n_param))
 
     if args.test:
-        test_acc = test(test_loader, triplet_net, args.epochs + 1)
+        import sys
+        test_loss, test_acc = test(test_loader, triplet_net, args.epochs + 1)
+        print('accuracy: {}, loss: {}'.format(test_acc.avg, test_loss.avg))
         sys.exit()
 
-    for epoch in tqdm(range(args.start_epoch, args.epochs + 1), desc='epoch'):
+    best_acc = .0
+    log = dict()
+    for epoch in tqdm(range(args.start_epoch, args.epochs + 1), desc='total'):
         adjust_lr(args, optimizer, epoch)
-        train(args, train_loader, triplet_net, criterion, optimizer, epoch)
+        loss_acc_log = train(args, train_loader, triplet_net,
+                             criterion, optimizer, epoch)
+        log['epoch_{}_train'.format(epoch)] = loss_acc_log
         losses, accs = test(args, val_loader, triplet_net, criterion, epoch)
+        log['epoch_{}_val'.format(epoch)] = {
+            'loss': losses.avg, 'acc': 100. * accs.avg}
         tqdm.write('[validation]\nloss: {:.4f}\tacc: {:.2f}%\n'.format(
             losses.avg, 100. * accs.avg))
 
-        is_best = acc > best_acc
-        best_acc = max(acc, best_acc)
-        save_checkpoint(
-            {'epoch': epoch + 1, 'state_dict': triplet_net.state_dict(), 'best_prec1': best_acc}, is_best)
+        is_best = accs.avg > best_acc
+        best_acc = max(accs.avg, best_acc)
+        save_ckpt(args, triplet_net.state_dict(), is_best)
+
+    print('...finished.')
+    save_ckpt(args, triplet_net.state_dict(), filename='model.pth')
 
 
 if __name__ == '__main__':
