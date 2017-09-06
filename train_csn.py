@@ -70,6 +70,93 @@ def save_ckpt(args, state, is_best=True, filename='ckpt.pth'):
             pass
 
 
+def train(args, train_loader, triplet_net, criterion, optimizer, epoch):
+    triplet_net.train()
+    losses = AverageMeter()
+    accs = AverageMeter()
+    emb_norms = AverageMeter()
+    mask_norms = AverageMeter()
+
+    for batch_idx, (data1, data2, data3, c) in tqdm(enumerate(train_loader), desc='training loop'):
+        if args.cuda:
+            data1 = data1.cuda()
+            data2 = data2.cuda()
+            data3 = data3.cuda()
+            c = c.cuda()
+        data1 = Variable(data1)
+        data2 = Variable(data2)
+        data3 = Variable(data3)
+        c = Variable(c)
+
+        dist_a, dist_b, mask_norm, embed_norm, mask_embed_norm = triplet_net(
+            data1, data2, data3, c)
+        target = torch.FloatTensor(dist_a.size()).fill_(1)
+        if args.cuda:
+            target = target.cuda()
+        target = Variable(target)
+
+        loss_triplet = criterion(dist_a, dist_b, target)
+        loss_embedd = embed_norm / np.sqrt(data1.size(0))
+        loss_mask = mask_norm / data1.size(0)
+        loss = loss_triplet + args.embed_loss * loss_embedd +\
+            args.mask_norm * loss_mask
+
+        losses.update(loss_triplet.data[0], data1.size(0))
+        acc = accuracy(dist_a, dist_b)
+        accs.update(acc, data1.size(0))
+        emb_norms.update(loss_embedd.data[0])
+        mask_norms.update(loss_mask.data[0])
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        if batch_idx * args.log_interval == 0:
+            tqdm.write('Epoch: {} [{}/{}]\t'
+                       'Loss: {:.4f} ({:.4f})\t'
+                       'Acc: {:,2f}% ({:.3f}%)\t'
+                       'emb_norm: {:.2f} ({:.2f})'.format(
+                           epoch, batch_idx * len(data1),
+                           len(train_loader.dataset), losses.val, losses.avg,
+                           100. * accs.val, 100. * accs.avg, emb_norms.val,
+                           emb_norms.avg))
+
+
+def test(args, conditions, test_loader, triplet_net, criterion, epoch):
+    triplet_net.eval()
+    losses = AverageMeter()
+    accs = AverageMeter()
+    accs_cs = dict([(key, AverageMeter()) for key in conditions])
+
+    for batch_idx, (data1, data2, data3, c) in tqdm(enumerate(test_loader)):
+        if args.cuda:
+            data1 = data1.cuda()
+            data2 = data2.cuda()
+            data3 = data3.cuda()
+            c = c.cuda()
+        data1 = Variable(data1)
+        data2 = Variable(data2)
+        data3 = Variable(data3)
+        c = Variable(c)
+        c_test = c
+
+        dist_a, dist_b, _, _ = triplet_net(data1, data2, data3, c)
+        target = torch.FloatTensor(dist_a.size()).fill_(1)
+        if args.cuda:
+            target = target.cuda()
+        target = Variable(target)
+        test_loss = criterion(dist_a, dist_b, target).data[0]
+
+        acc = accuracy(dist_a, dist_b)
+        accs.update(acc, data1.size(0))
+        for condition in conditions:
+            accs_cs[condition].update(accuracy_id(
+                dist_a, dist_b, c_test, condition), data1.size(0))
+        losses.update(test_loss, data1.size(0))
+
+    return losses, accs
+
+
 def main():
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -192,5 +279,18 @@ def main():
         test_acc = test(test_loader, triplet_net, args.epochs + 1)
         sys.exit()
 
-    for epoch in tqdm(range(args.start_epoch, args.epochs + 1)):
-        # TODO(crcrpar)
+    for epoch in tqdm(range(args.start_epoch, args.epochs + 1), desc='epoch'):
+        adjust_lr(args, optimizer, epoch)
+        train(args, train_loader, triplet_net, criterion, optimizer, epoch)
+        losses, accs = test(args, val_loader, triplet_net, criterion, epoch)
+        tqdm.write('[validation]\nloss: {:.4f}\tacc: {:.2f}%\n'.format(
+            losses.avg, 100. * accs.avg))
+
+        is_best = acc > best_acc
+        best_acc = max(acc, best_acc)
+        save_checkpoint(
+            {'epoch': epoch + 1, 'state_dict': triplet_net.state_dict(), 'best_prec1': best_acc}, is_best)
+
+
+if __name__ == '__main__':
+    main()
