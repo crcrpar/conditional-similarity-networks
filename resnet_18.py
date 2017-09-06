@@ -21,6 +21,7 @@ def conv3x3(in_planes, out_planes, stride=1):
 class Conv3x3(nn.Module):
 
     def __init__(self, in_planes, out_planes, stride=1):
+        super(Conv3x3, self).__init__()
         self.pad = nn.ReflectionPad2d(1)
         self.conv = nn.Conv2d(in_planes, out_planes, kernel_size=3,
                               stride=stride, bias=False)
