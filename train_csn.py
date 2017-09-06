@@ -21,10 +21,13 @@ from tripletnet import CS_Tripletnet
 class AverageMeter(object):
 
     def __init__(self):
-        self.reset()
+        self.val = .0
+        self.avg = .0
+        self.sum = .0
+        self.count = 0
 
     def reset(self):
-        self.val, self.avg, self.sum, self.count = [.0] * 4
+        self.val, self.avg, self.sum, self.count = .0, .0, .0, 0
 
     def update(self, val, n=1):
         self.val = val
@@ -278,6 +281,7 @@ def main():
     optimizer = optim.Adam(parameters, lr=args.lr)
     n_param = sum([p.data.nelement() for p in triplet_net.parameters()])
     print('# of parameters: {}'.format(n_param))
+    print('='*50)
 
     if args.test:
         import sys
