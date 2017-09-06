@@ -97,7 +97,7 @@ def train(args, train_loader, triplet_net, criterion, optimizer, epoch):
         loss_embedd = embed_norm / np.sqrt(data1.size(0))
         loss_mask = mask_norm / data1.size(0)
         loss = loss_triplet + args.embed_loss * loss_embedd +\
-            args.mask_norm * loss_mask
+            args.mask_loss * loss_mask
 
         losses.update(loss_triplet.data[0], data1.size(0))
         acc = accuracy(dist_a, dist_b)
