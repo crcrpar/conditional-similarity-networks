@@ -199,6 +199,8 @@ def main():
                         help='To initialize masks to be disjoint')
     parser.add_argument('--conditions', nargs='*', type=int,
                         help='Set of similarity notions')
+    parser.add_argument('--out', type=str, default='result',
+                        help='dir to save models and log')
     parser.set_defaults(test=False)
     parser.set_defaults(learned=False)
     parser.set_defaults(prein=False)
