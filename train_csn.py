@@ -35,8 +35,6 @@ class AverageMeter(object):
 
 def adjust_lr(args, optimizer, epoch, plotter=None):
     lr = args.lr * ((1 - 0.015) ** epoch)
-    if args.visdom and plotter is not None:
-        plotter.plot('lr', 'learning rate', epoch, lr)
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
