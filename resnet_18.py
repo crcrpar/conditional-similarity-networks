@@ -1,6 +1,7 @@
-import torch.nn as nn
 import math
-import torch.utils.model_zoo as model_zoo
+import torch
+import torch.nn as nn
+from torch.utils import model_zoo
 
 
 __all__ = ['ResNet', 'resnet18']
@@ -17,15 +18,28 @@ def conv3x3(in_planes, out_planes, stride=1):
                      padding=1, bias=False)
 
 
+class Conv3x3(nn.Module):
+
+    def __init__(self, in_planes, out_planes, stride=1):
+        self.pad = nn.ReflectionPad2d(1)
+        self.conv = nn.Conv2d(in_planes, out_planes, kernel_size=3,
+                              stride=stride, bias=False)
+
+    def forward(self, x):
+        h = self.pad(x)
+        h = self.conv(h)
+        return h
+
+
 class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, downsample=None):
         super(BasicBlock, self).__init__()
-        self.conv1 = conv3x3(inplanes, planes, stride)
+        self.conv1 = Conv3x3(inplanes, planes, stride)
         self.bn1 = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3(planes, planes)
+        self.conv2 = Conv3x3(planes, planes)
         self.bn2 = nn.BatchNorm2d(planes)
         self.downsample = downsample
         self.stride = stride
@@ -47,6 +61,7 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
 
         return out
+
 
 class ResNet(nn.Module):
 
