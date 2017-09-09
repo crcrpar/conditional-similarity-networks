@@ -155,7 +155,8 @@ def main():
         import sys
         print('###=== DEBUG ===###')
         print('# check dataset')
-        dataset = zappos_data.make_dataset(args.root,
+        dataset = zappos_data.make_dataset(conditions[0],
+                                           args.root,
                                            args.base_path,
                                            args.files_json_path)
         print('## len(dataset) = {}'.format(len(dataset)))
