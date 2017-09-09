@@ -1,6 +1,9 @@
 import os
 from PIL import Image
 
+import torch
+from torchvision import transforms
+
 
 def default_image_loader(path):
     return Image.open(path).convert('RGB')
@@ -62,12 +65,12 @@ def make_data_loader(root='data', base_path='ut-zap50k-images',
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     loader = torch.utils.data.DataLoader(
-        AllZaposDataset(root, base_path, files_json_path, split,
-                        transform=transforms.Compose([
-                            transforms.Scale(112),
-                            transforms.CenterCrop(112),
-                            transforms.ToTensor(),
-                            normalize,
-                        ])),
+        ZaposDataset(root, base_path, files_json_path, split,
+                     transform=transforms.Compose([
+                         transforms.Scale(112),
+                         transforms.CenterCrop(112),
+                         transforms.ToTensor(),
+                         normalize,
+                     ])),
         batch_size=batch_size, shuffle=shuffle, **kwargs)
     return loader

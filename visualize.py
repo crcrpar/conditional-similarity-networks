@@ -25,9 +25,9 @@ from tripletnet import CS_Tripletnet
 import zappos_data
 
 
-def load_trained_csn(state_path):
+def load_trained_csn(state_path, n_conditions=4, embeding_size=64):
     cnn = resnet_18.resnet18()
-    csn = ConditionalSimNet(cnn)
+    csn = ConditionalSimNet(cnn, n_conditions, embedding_size)
     tnet = CS_Tripletnet(csn)
     ckpt = torch.load(state_path)
     tnet.load_state_dict(ckpt['state_dict'])
