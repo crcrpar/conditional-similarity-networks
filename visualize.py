@@ -1,22 +1,16 @@
 import argparse
 from datetime import datetime as dt
-import itertools
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from PIL import Image
 import plotly.plotly as py
 
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import LabelEncoder
 import torch
 from torch.autograd import Variable
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision
-from torchvision import transforms
 import tqdm
 
 from csn import ConditionalSimNet
@@ -142,11 +136,11 @@ def main():
                         help='0 indicates CPU mode')
     args = parser.parse_args()
 
-    assert args.conditions in [0, 1, 2, 3]
     # extract feature
     if args.conditions is None:
         conditions = list(range(4))
     else:
+        assert args.conditions in [0, 1, 2, 3]
         conditions = list(args.conditions)
     feature_files_dict = dump_feature_files(
         args.root, args.base_path, args.files_json_path, args.batch_size,
