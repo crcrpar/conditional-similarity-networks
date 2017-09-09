@@ -102,7 +102,7 @@ def cluster_feature(feature_file_paths, n_components=2):
         tsne.fit(feature_matrix)
         embedded_feature = tsne.fit_transform(feature_matrix)
 
-        name, ext = os.path.splitext(path)
+        name, ext = os.path.splitext(os.path.basename(path))
         name += 'embedded'
         filename = name + ext
         filepath = os.path.join(root, filename)
