@@ -46,8 +46,12 @@ def extract_feature(model, loader, cuda):
 
 
 def dump_feature(model, loader, condition, path, cuda):
+    paths = []
     for idx, feature in enumerate(extract_feature(model, loader, cuda)):
-        np.savetxt(path.format(idx), feature, delimiter='\t')
+        filename = path.format(condition, idx)
+        np.savetxt(filename, feature, delimiter='\t')
+        paths.append(filename)
+    return paths
 
 
 def dump_feature_files(root, base_path, files_json_path, batch_size,
@@ -61,25 +65,27 @@ def dump_feature_files(root, base_path, files_json_path, batch_size,
     if cuda:
         trained_csn.cuda()
 
-    feature_files_dict = dict()
+    feature_files = list()
     for condition in tqdm.tqdm(conditions, desc='condition'):
         # path
-        path = os.path.join(out_dir, out_file.format(condition))
-        feature_files_dict[condition] = path
+        # path = os.path.join(out_dir, out_file.format(condition))
+        # feature_files_dict[condition] = path
         # prepare a loader
         kwargs = {'num_workers': 4, 'pin_memory': True} if cuda else {}
         loader = zappos_data.make_data_loader(
             condition, root, base_path, files_json_path, batch_size, **kwargs)
         # start extracting features
         start_time = dt.now()
-        path = os.path.join(out_dir, out_file.format(condition))
-        dump_feature(trained_csn, loader, condition, path, cuda)
+        # path = os.path.join(out_dir, out_file.format(condition))
+        out_file = os.path.join(out_dir, out_file)
+        condition_paths = dump_feature(trained_csn, loader, condition, out_file, cuda)
         end_time = dt.now()
         duration = (end_time - start_time).total_seconds() / 60.0
         tqdm.tqdm.write('duration: {:.2f}[min]'.format(duration))
-        tqdm.tqdm.write('dump {}'.format(os.path.basename(path)))
+        tqdm.tqdm.write('condition {} has {} files'.format(condition, len(condition_paths)))
+        feature_files.extend(condition_paths)
 
-    return feature_files_dict
+    return feature_files
 
 
 def cluster_feature(feature_files_dict, split, condition, n_components=2):
