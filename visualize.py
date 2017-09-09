@@ -58,6 +58,7 @@ def dump_feature_files(root, base_path, files_json_path, batch_size,
         os.makedirs(out_dir)
 
     # load trained CSN
+    print("... loading {}\n".format(state_path))
     trained_csn = load_trained_csn(state_path)
     if cuda:
         trained_csn.cuda()
@@ -70,7 +71,7 @@ def dump_feature_files(root, base_path, files_json_path, batch_size,
         # prepare a loader
         kwargs = {'num_workers': 4, 'pin_memory': True} if cuda else {}
         loader = zappos_data.make_data_loader(
-            root, base_path, files_json_path, path, **kwargs)
+            root, base_path, files_json_path, batch_size, **kwargs)
         # start extracting features
         start_time = dt.now()
         path = os.path.join(out_dir, out_file.format(condition))
