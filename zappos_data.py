@@ -13,7 +13,7 @@ def default_image_loader(path):
 def check_paths(root, paths):
     existing_files, non_existing_files = list(), list()
     for path in paths:
-        if os.path.exists(root, path):
+        if os.path.exists(os.path.join(root, path)):
             existing_files.append(path)
         else:
             non_existing_files.append(path)
