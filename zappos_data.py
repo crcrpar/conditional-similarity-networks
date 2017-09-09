@@ -10,6 +10,16 @@ def default_image_loader(path):
     return Image.open(path).convert('RGB')
 
 
+def check_paths(root, paths):
+    existing_files, non_existing_files = list(), list()
+    for path in paths:
+        if os.path.exists(root, path):
+            existing_files.append(path)
+        else:
+            non_existing_files.append(path)
+    return existing_files, non_existing_files
+
+
 class ZapposDataset(torch.utils.data.Dataset):
 
     def __init__(self, root, base_path, files_json_path,
@@ -18,8 +28,10 @@ class ZapposDataset(torch.utils.data.Dataset):
         self.base_path = base_path
         self.img_root = os.path.join(self.root, self.base_path)
         with open(os.path.join(self.root, files_json_path)) as f:
-            self.files = [line.rstrip('\n') for line in f]
+            paths = [line.rstrip('\n') for line in f]
 
+        self.files, self.non_existing_files = check_paths(self.img_root, paths)
+        print('\t+{} non existing files\n'.format(len(self.non_existing_files)))
         self.transform = transform
         self.loader = loader
 
@@ -48,7 +60,7 @@ def make_dataset(root, base_path, files_json_path):
                                 transforms.CenterCrop(112),
                                 transforms.ToTensor(),
                                 normalize,
-                                ]))
+                            ]))
     return dataset
 
 

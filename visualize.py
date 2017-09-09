@@ -168,6 +168,10 @@ def main():
                                              pin_memory=True)
         print('## len(loader) = {}'.format(len(loader)))
         print('## loader.sampler = {}'.format(type(loader.sampler)))
+        print('## run iteration')
+        for idx, loader in enumerate(loader):
+            if idx % 50 == 0:
+                print('{}th batch'.format(idx))
         sys.exit()
 
     feature_files_dict = dump_feature_files(
