@@ -46,12 +46,20 @@ def extract_feature(model, loader, cuda):
 
 
 def dump_feature(model, loader, condition, path, cuda):
-    paths = []
-    for idx, feature in enumerate(extract_feature(model, loader, cuda)):
-        filename = path.format(condition, idx)
-        np.savetxt(filename, feature, delimiter='\t')
-        paths.append(filename)
-    return paths
+    path = path.format(condition)
+    f = open(path, 'ab')
+    for img_batch, c in tqdm.tqdm(loader, desc='feature extraction'):
+        if cuda:
+            img_batch = img_batch.cuda()
+            c = c.cuda()
+        img_batch, c = Variable(img_batch), Variable(c)
+        feature = model(img_batch, c)[0]
+        if cuda:
+            feature = feature.cpu()
+        feature_np = feature.data.numpy()
+        np.savetxt(f, feature_np, delimiter='\t')
+    f.close()
+    return path
 
 
 def dump_feature_files(root, base_path, files_json_path, batch_size,
@@ -67,43 +75,40 @@ def dump_feature_files(root, base_path, files_json_path, batch_size,
 
     feature_files = list()
     for condition in tqdm.tqdm(conditions, desc='condition'):
-        # path
-        # path = os.path.join(out_dir, out_file.format(condition))
-        # feature_files_dict[condition] = path
         # prepare a loader
         kwargs = {'num_workers': 4, 'pin_memory': True} if cuda else {}
         loader = zappos_data.make_data_loader(
             condition, root, base_path, files_json_path, batch_size, **kwargs)
         # start extracting features
         start_time = dt.now()
-        # path = os.path.join(out_dir, out_file.format(condition))
-        out_file = os.path.join(out_dir, out_file)
-        condition_paths = dump_feature(trained_csn, loader, condition, out_file, cuda)
+        path_format = os.path.join(out_dir, out_file)
+        path = dump_feature(trained_csn, loader, condition, path_format, cuda)
         end_time = dt.now()
         duration = (end_time - start_time).total_seconds() / 60.0
-        tqdm.tqdm.write('duration: {:.2f}[min]'.format(duration))
-        tqdm.tqdm.write('condition {} has {} files'.format(condition, len(condition_paths)))
-        feature_files.extend(condition_paths)
+        tqdm.tqdm.write('duration: {:.2f} [min]'.format(duration))
+        feature_files.append(path)
 
     return feature_files
 
 
-def cluster_feature(feature_files_dict, split, condition, n_components=2):
+def cluster_feature(feature_file_root, feature_filenames, n_components=2):
+    out_paths = list()
     if n_components not in (2, 3):
         raise ValueError('invalid # of dimension')
-    feature_file_path = feature_files_dict[split][condition]
-    feature_matrix = np.load(feature_file_path)
-    tsne = TSNE(n_components=n_components)
-    tsne.fit(feature_matrix)
-    embedded_feature = tsne.fit_transform(feature_matrix)
+    for feature_filename in tqdm.tqdm(feature_filenames, desc='clustering'):
+        path = os.path.join(feature_file_root, feature_filename)
+        feature_matrix = np.loadtxt(path, delimiter='\t')
+        tsne = TSNE(n_components=n_components)
+        tsne.fit(feature_matrix)
+        embedded_feature = tsne.fit_transform(feature_matrix)
 
-    root = os.path.dirname(feature_file_path)
-    filename = os.path.basename(feature_file_path)
-    name, ext = os.path.splitext(filename)
-    name += 'embedded'
-    filename = name + ext
-    filepath = os.path.join(root, filename)
-    np.savetxt(filepath, embedded_feature, delimiter='\t')
+        name, ext = os.path.splitext(feature_filename)
+        name += 'embedded'
+        filename = name + ext
+        filepath = os.path.join(feature_file_root, filename)
+        np.savetxt(filepath, embedded_feature, delimiter='\t')
+        out_paths.append(filename)
+    return out_paths
 
 
 def scatter(embedded_feature, out_dir, condition, files=None, plotly=False):
@@ -137,7 +142,7 @@ def main():
                         help='condition to visualize. default is all')
     parser.add_argument('--out_dir', default='visualization',
                         help='directory to save features')
-    parser.add_argument('--out_file', default='condition_{}_idx_{}.tsv',
+    parser.add_argument('--out_file', default='condition_{}.tsv',
                         help='file to save features')
     parser.add_argument('--state_path',
                         default='runs/Conditional_Similarity_Network/model_best.pth.tar')
@@ -182,13 +187,18 @@ def main():
                     x.requires_grad, x.volatile))
         sys.exit()
 
-    feature_files_dict = dump_feature_files(
+    feature_files = dump_feature_files(
         args.root, args.base_path, args.files_json_path, args.batch_size,
         conditions, args.out_dir, args.out_file, args.state_path, args.cuda)
 
     # compress features to {args.n_components}-D
+    compressed_feature_filenames = cluster_feature(args.out_dir, feature_files,
+                                                   args.n_components)
+
+    '''
     for condition in tqdm.tqdm(conditions, desc='t-SNE'):
         cluster_feature(feature_files_dict, condition, args.n_components)
+    '''
 
 
 if __name__ == '__main__':
