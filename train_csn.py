@@ -3,8 +3,11 @@ from datetime import datetime as dt
 import os
 from six.moves import cPickle as pickle
 import subprocess
-from tqdm import tqdm
+import tqdm
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.autograd import Variable
@@ -34,6 +37,109 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+
+class Trainer(object):
+
+    def __init__(self, model, optimizer, accuracy, criterion, train_loader, val_loader, cuda):
+        self.model = model
+        self.optimizer = optimizer
+        self.accuracy = accuracy
+        self.criterion = criterion
+        self.train_loader = train_loader
+        self.val_loader = val_loader
+        self.cuda = cuda
+        self.log = dict()
+
+    def run(self, n_epoch, log_interval, ckpt_interval, best_only=True):
+        for epoch in tqdm.tqdm(range(n_epoch), desc='tota'):
+            self.log['epoch{}'.format(epoch)] = {
+                'train': dict(), 'validate': dict()}
+            self.train(eopch, log_interval)
+            self.validate(epoch)
+
+    def train(self, log_interval):
+        model = self.model
+        optimizer = self.optimizer
+        accuracy = self.accuracy
+        criterion = self.criterion
+        train_loader = self.train_loader
+
+        model.train()
+        for batch_idx, (data1, data2, data3, c) in tqdm.tqdm(enumerate(train_loader), desc='training'):
+            if self.cuda:
+                data1, data2, data3 = data1.cuda(), data2.cuda(), data3.cuda()
+                c = c.cuda()
+            data1, data2, data3, c = Variable(data1), Variable(
+                data2), Variable(data3), Variable(c)
+
+            dist_a, dist_b, mask_norm, embed_norm, mask_embed_norm = model(
+                data1, data2, data3, c)
+            target = torch.FloatTensor(dist_a.size()).fill_(1)
+            if self.cuda:
+                target = target.cuda()
+            target = Variable(target)
+
+            loss_triplet = criterion(dist_a, dist_b, target)
+            loss_embedd = embed_norm / np.sqrt(data1.size(0))
+            loss_mask = mask_norm / data1.size(0)
+            loss = loss_triplet + self.lam_embed * loss_embedd + self.lam_mask * loss_mask
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            acc = accuracy(dist_a, dist_b)
+            size = data1.size(0)
+            current_log = {
+                'loss': loss_triplet.data[0] / size,
+                'acc': acc / size,
+                'embed_norm': loss_embedd.data[0],
+                'mask_norm': loss_mask.data[0]
+            }
+            self.log['epoch{}'.format(epoch)]['batch{}'.format(
+                batch_idx)] = current_log
+
+            if batch_idx % log_interval == 0:
+                tqdm.tqdm.write('loss: {:.4f}\tacc: {:.4f}\tembedded_norm: {:.2f}'.format(
+                    current_log['loss'], current_log['acc'], current_log['embed_norm'], current_log['mask_norm']))
+
+    def validate(self):
+        model = self.model
+        accuracy = self.accuracy
+        criterion = self.criterion
+        val_loader = self.val_loader
+
+        losses, accs, acc_cond = list(), list(), dict()
+        for condition in conditions:
+            acc_cond[condition] = list()
+
+        model.eval()
+        for batch_idx, (data1, data2, data3, c) in tqdm.tqdm(enumerate(val_loader), desc='validation'):
+            if self.cuda:
+                data1, data2, data3, c = data1.cuda(), data2.cuda(), data3.cuda(), c.cuda()
+            data1, data2, data3, c = Variable(data1), Variable(
+                data2), Variable(data3), Variable(c)
+            c_test = c
+
+            dist_a, dist_b, _, _, _ = model(data1, data2, data3, c)
+            target = torch.FloatTensor(dist_a.size()).fill_(1)
+            if self.cuda:
+                target = target.cuda()
+            target = Variable(target)
+            test_loss = criterion(dist_a, dist_b, target).data[0]
+            losses.append(test_loss)
+            acc = accuracy(dist_a, dist_b)
+            accs.append(acc)
+            for condition in conditions:
+                acc_cond[condition].append(accuracy_id(
+                    dist_a, dist_b, c_test, condition))
+
+        self.log['epoch{}'.format(epoch)]['test'] = {
+            'loss': losses / len(val_loader),
+            'acc': sum(accs) / len(val_loader)}
+        for condition in conditions:
+            self.log['epoch{}'.format(epoch)]['test']['{}'.format(
+                condition)] = sum(acc_cond[condition]) / len(val_loader)
 
 
 def adjust_lr(args, optimizer, epoch, plotter=None):
@@ -99,7 +205,7 @@ def train(args, train_loader, triplet_net, criterion, optimizer, epoch):
         loss_triplet = criterion(dist_a, dist_b, target)
         loss_embedd = embed_norm / np.sqrt(data1.size(0))
         loss_mask = mask_norm / data1.size(0)
-        loss = loss_triplet + args.embed_loss * loss_embedd +\
+        loss = loss_triplet + args.embed_loss * loss_embedd +
             args.mask_loss * loss_mask
 
         losses.update(loss_triplet.data[0], data1.size(0))

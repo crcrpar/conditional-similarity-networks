@@ -8,6 +8,8 @@ class ConditionalSimNet(nn.Module):
     def __init__(self, embeddingnet, n_conditions, embedding_size, learnedmask=True, prein=False):
         """ConditionalSimNet 
 
+        In this Module, embeddingnet is one CNN and mask is Embedding layer.
+        This is a little confusing.
         Args:
             embeddingnet: The network that projects the inputs into an embedding of embedding_size
             n_conditions: Integer defining number of different similarity notions

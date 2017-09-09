@@ -5,6 +5,7 @@ import torch.nn.functional as F
 class CS_Tripletnet(nn.Module):
 
     def __init__(self, embeddingnet):
+        """This Module should be defined on the top of ConditionalSimNet or CNN."""
         super(CS_Tripletnet, self).__init__()
         self.embeddingnet = embeddingnet
 
