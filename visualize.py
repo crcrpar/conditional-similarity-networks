@@ -38,8 +38,10 @@ def extract_feature(model, loader, condition, cuda):
     for img_batch in tqdm.tqdm(loader, desc='feature extraction'):
         if cuda:
             img_batch = img_batch.cuda()
-        x = Variable(img_batch)
-        feature = model(x)
+            c = condition.cuda()
+        x = Variable(img_batch, requires_grad=False, volatile=True)
+        c = Variable(c, requires_grad=False, volatile=True)
+        feature = model(x, c)
         if cuda:
             feature = feature.cpu()
         feature_np = feature.data.numpy()
@@ -169,9 +171,12 @@ def main():
         print('## len(loader) = {}'.format(len(loader)))
         print('## loader.sampler = {}'.format(type(loader.sampler)))
         print('## run iteration')
-        for idx, loader in enumerate(loader):
+        for idx, batch in enumerate(loader):
             if idx % 50 == 0:
                 print('{}th batch'.format(idx))
+                x = Variable(batch, requires_grad=False, volatile=True)
+                print('x.requires_grad {}, x.volatile {}'.format(
+                    x.requires_grad, x.volatile))
         sys.exit()
 
     feature_files_dict = dump_feature_files(
