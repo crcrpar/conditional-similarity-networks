@@ -91,23 +91,23 @@ def dump_feature_files(root, base_path, files_json_path, batch_size,
     return feature_files
 
 
-def cluster_feature(feature_file_root, feature_filenames, n_components=2):
+def cluster_feature(feature_file_paths, n_components=2):
+    root = os.path.dirname(feature_file_paths[0])
     out_paths = list()
     if n_components not in (2, 3):
         raise ValueError('invalid # of dimension')
-    for feature_filename in tqdm.tqdm(feature_filenames, desc='clustering'):
-        path = os.path.join(feature_file_root, feature_filename)
+    for path in tqdm.tqdm(feature_file_paths, desc='clustering'):
         feature_matrix = np.loadtxt(path, delimiter='\t')
         tsne = TSNE(n_components=n_components)
         tsne.fit(feature_matrix)
         embedded_feature = tsne.fit_transform(feature_matrix)
 
-        name, ext = os.path.splitext(feature_filename)
+        name, ext = os.path.splitext(path)
         name += 'embedded'
         filename = name + ext
-        filepath = os.path.join(feature_file_root, filename)
+        filepath = os.path.join(root, filename)
         np.savetxt(filepath, embedded_feature, delimiter='\t')
-        out_paths.append(filename)
+        out_paths.append(filepath)
     return out_paths
 
 
@@ -187,13 +187,16 @@ def main():
                     x.requires_grad, x.volatile))
         sys.exit()
 
+    out_dir = os.path.join(args.out_dir,
+                           os.path.splitext(args.files_json_path)[0])
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
     feature_files = dump_feature_files(
         args.root, args.base_path, args.files_json_path, args.batch_size,
-        conditions, args.out_dir, args.out_file, args.state_path, args.cuda)
-
+        conditions, out_dir, args.out_file, args.state_path, args.cuda)
     # compress features to {args.n_components}-D
-    compressed_feature_filenames = cluster_feature(args.out_dir, feature_files,
-                                                   args.n_components)
+    compressed_feature_file_paths = cluster_feature(feature_files,
+                                                    args.n_components)
 
     '''
     for condition in tqdm.tqdm(conditions, desc='t-SNE'):
