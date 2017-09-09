@@ -31,14 +31,11 @@ def load_trained_csn(state_path, n_conditions=4, embedding_size=64):
     return csn
 
 
-def extract_feature(model, loader, condition, cuda):
-    if condition not in set([0, 1, 2, 3]):
-        raise ValueError('invalid condition for zappos')
-
-    for img_batch in tqdm.tqdm(loader, desc='feature extraction'):
+def extract_feature(model, loader, cuda):
+    for img_batch, c in tqdm.tqdm(loader, desc='feature extraction'):
         if cuda:
             img_batch = img_batch.cuda()
-            c = condition.cuda()
+            c = c.cuda()
         x = Variable(img_batch, requires_grad=False, volatile=True)
         c = Variable(c, requires_grad=False, volatile=True)
         feature = model(x, c)
@@ -73,7 +70,7 @@ def dump_feature_files(root, base_path, files_json_path, batch_size,
         # prepare a loader
         kwargs = {'num_workers': 4, 'pin_memory': True} if cuda else {}
         loader = zappos_data.make_data_loader(
-            root, base_path, files_json_path, batch_size, **kwargs)
+            root, base_path, files_json_path, condition, batch_size, **kwargs)
         # start extracting features
         start_time = dt.now()
         path = os.path.join(out_dir, out_file.format(condition))

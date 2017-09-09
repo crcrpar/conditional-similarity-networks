@@ -22,7 +22,7 @@ def check_paths(root, paths):
 
 class ZapposDataset(torch.utils.data.Dataset):
 
-    def __init__(self, root, base_path, files_json_path,
+    def __init__(self, root, base_path, files_json_path, condition,
                  conditions=None, transform=None, loader=default_image_loader):
         self.root = root
         self.base_path = base_path
@@ -32,6 +32,7 @@ class ZapposDataset(torch.utils.data.Dataset):
 
         self.files, self.non_existing_files = check_paths(self.img_root, paths)
         print('\t+{} non existing files\n'.format(len(self.non_existing_files)))
+        self.condition = condition
         self.transform = transform
         self.loader = loader
 
@@ -43,7 +44,7 @@ class ZapposDataset(torch.utils.data.Dataset):
         if os.path.exists(path):
             img = self.loader(path)
             if self.transform is not None:
-                return self.transform(img)
+                return self.transform(img), condition
         else:
             return None
 
@@ -51,10 +52,10 @@ class ZapposDataset(torch.utils.data.Dataset):
         return self.all_files[split]
 
 
-def make_dataset(root, base_path, files_json_path):
+def make_dataset(root, base_path, files_json_path, condition):
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    dataset = ZapposDataset(root, base_path, files_json_path,
+    dataset = ZapposDataset(root, base_path, files_json_path, condition,
                             transform=transforms.Compose([
                                 transforms.Scale(112),
                                 transforms.CenterCrop(112),
@@ -65,7 +66,7 @@ def make_dataset(root, base_path, files_json_path):
 
 
 def make_data_loader(root='data', base_path='ut-zap50k-images',
-                     files_json_path='filenames.json',
+                     files_json_path='filenames.json', condition,
                      batch_size=64, shuffle=False, **kwargs):
     """Make a loader of ZapposDataset.
 
@@ -79,7 +80,7 @@ def make_data_loader(root='data', base_path='ut-zap50k-images',
         shuffle: default is False because I assume this loader is used
             for feature extranciton, not training.
     """
-    dataset = make_dataset(root, base_path, files_json_path)
+    dataset = make_dataset(root, base_path, files_json_path, condition)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
                                          shuffle=shuffle, **kwargs)
     return loader
