@@ -83,13 +83,13 @@ def main():
 
     split_list = ['train', 'val', 'test']
     for split in tqdm(split_list):
-        out_path = os.path.join(out_root, '{}_indices.json'.format(split))
+        out_path = os.path.join(_root, '{}_indices.json'.format(split))
         split_indices_list = save_unique_split_indices(
             root, split, out_path, True)
         split_filenames = lookup_json(split_indices_list, filenames_path)
         out_path = out_path.replace('indices', 'filenames')
         save_unique_split_filenames(split_filenames, out_path)
-    save_unseen_filenames(out_root, None, False)
+    save_unseen_filenames(_root, None, False)
 
 
 if __name__ == '__main__':
