@@ -52,7 +52,7 @@ class ZapposDataset(torch.utils.data.Dataset):
         return self.all_files[split]
 
 
-def make_dataset(root, base_path, files_json_path, condition):
+def make_dataset(condition, root, base_path, files_json_path):
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     dataset = ZapposDataset(root, base_path, files_json_path, condition,
