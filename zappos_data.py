@@ -44,7 +44,7 @@ class ZapposDataset(torch.utils.data.Dataset):
         if os.path.exists(path):
             img = self.loader(path)
             if self.transform is not None:
-                return self.transform(img), condition
+                return self.transform(img), self.condition
         else:
             return None
 
