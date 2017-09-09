@@ -70,7 +70,7 @@ def dump_feature_files(root, base_path, files_json_path, batch_size,
         # prepare a loader
         kwargs = {'num_workers': 4, 'pin_memory': True} if cuda else {}
         loader = zappos_data.make_data_loader(
-            root, base_path, files_json_path, condition, batch_size, **kwargs)
+            condition, root, base_path, files_json_path, batch_size, **kwargs)
         # start extracting features
         start_time = dt.now()
         path = os.path.join(out_dir, out_file.format(condition))

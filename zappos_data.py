@@ -65,8 +65,8 @@ def make_dataset(root, base_path, files_json_path, condition):
     return dataset
 
 
-def make_data_loader(root='data', base_path='ut-zap50k-images',
-                     files_json_path='filenames.json', condition,
+def make_data_loader(condition, root='data', base_path='ut-zap50k-images',
+                     files_json_path='filenames.json',
                      batch_size=64, shuffle=False, **kwargs):
     """Make a loader of ZapposDataset.
 
