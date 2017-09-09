@@ -38,7 +38,7 @@ def extract_feature(model, loader, cuda):
             c = c.cuda()
         x = Variable(img_batch, requires_grad=False, volatile=True)
         c = Variable(c, requires_grad=False, volatile=True)
-        feature = model(x, c)
+        feature = model(x, c)[0]
         if cuda:
             feature = feature.cpu()
         feature_np = feature.data.numpy()
