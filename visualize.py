@@ -149,7 +149,7 @@ def main():
         conditions = list(args.conditions)
     feature_files_dict = dump_feature_files(
         args.root, args.base_path, args.files_json_path, args.batch_size,
-        args.out_dir, args.out_file, args.state_path, args.cuda)
+        conditions, args.out_dir, args.out_file, args.state_path, args.cuda)
 
     # compress features to {args.n_components}-D
     for condition in tqdm.tqdm(conditions, desc='t-SNE'):
