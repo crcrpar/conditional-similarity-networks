@@ -168,7 +168,7 @@ def main():
         print('## len(loader) = {}'.format(len(loader)))
         print('## loader.sampler = {}'.format(type(loader.sampler)))
         print('## run iteration')
-        for idx, batch in enumerate(loader):
+        for idx, (batch, c) in enumerate(loader):
             if idx % 50 == 0:
                 print('{}th batch'.format(idx))
                 x = Variable(batch, requires_grad=False, volatile=True)
