@@ -47,7 +47,7 @@ def extract_feature(model, loader, cuda):
 
 def dump_feature(model, loader, condition, path, cuda):
     with open(path, 'a') as f:
-        for feature in extract_feature(model, loader, condition, cuda):
+        for feature in extract_feature(model, loader, cuda):
             np.savetxt(f, feature, delimiter='\t')
 
 
