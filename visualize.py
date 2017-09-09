@@ -46,7 +46,7 @@ def extract_feature(model, loader, condition, cuda):
         yield feature_np
 
 
-def dump_feature(model, loader, condition, cuda, path):
+def dump_feature(model, loader, condition, path, cuda):
     with open(path, 'a') as f:
         for feature in extract_feature(model, loader, condition, cuda):
             np.savetxt(f, feature, delimiter='\t')
@@ -65,14 +65,15 @@ def dump_feature_files(root, base_path, files_json_path, batch_size,
     feature_files_dict = dict()
     for condition in tqdm.tqdm(conditions, desc='condition'):
         # path
-        path = os.path.join(out_dir, out_file.format(condition=condition))
+        path = os.path.join(out_dir, out_file.format(condition))
         feature_files_dict[condition] = path
         # prepare a loader
         loader = zappos_data.make_data_loader(
             root, base_path, files_json_path, path)
         # start extracting features
         start_time = dt.now()
-        dump_feature(trained_csn, loader, condition, cuda)
+        path = os.path.join(out_dir, out_file.format(condition))
+        dump_feature(trained_csn, loader, condition, path, cuda)
         end_time = dt.now()
         duration = (end_time - start_time).total_seconds() / 60.0
         tqdm.tqdm.write('duration: {:.2f}[min]'.format(duration))
@@ -128,6 +129,8 @@ def main():
                         help='condition to visualize. default is all')
     parser.add_argument('--out_dir', default='visualization',
                         help='directory to save features')
+    parser.add_argument('--out_file', default='condition_{}.tsv',
+                        help='file to save features')
     parser.add_argument('--state_path',
                         default='runs/Conditional_Similarity_Network/model_best.pth.tar')
     parser.add_argument('--n_components', default=2,
@@ -144,7 +147,7 @@ def main():
         conditions = list(args.conditions)
     feature_files_dict = dump_feature_files(
         args.root, args.base_path, args.files_json_path, args.batch_size,
-        args.out_dir, args.state_path)
+        args.out_dir, args.out_file, args.state_path, args.cuda)
 
     # compress features to {args.n_components}-D
     for condition in tqdm.tqdm(conditions, desc='t-SNE'):
