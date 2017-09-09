@@ -39,6 +39,19 @@ class ZapposDataset(torch.utils.data.Dataset):
         return self.all_files[split]
 
 
+def make_dataset(root, base_path, files_json_path):
+    normalize = transforms.Normalize(
+        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    dataset = ZapposDataset(root, base_path, files_json_path,
+                            transform=transforms.Compose([
+                                transforms.Scale(112),
+                                transforms.CenterCrop(112),
+                                transforms.ToTensor(),
+                                normalize,
+                                ]))
+    return dataset
+
+
 def make_data_loader(root='data', base_path='ut-zap50k-images',
                      files_json_path='filenames.json',
                      batch_size=64, shuffle=False, **kwargs):
@@ -54,15 +67,7 @@ def make_data_loader(root='data', base_path='ut-zap50k-images',
         shuffle: default is False because I assume this loader is used
             for feature extranciton, not training.
     """
-    normalize = transforms.Normalize(
-        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    loader = torch.utils.data.DataLoader(
-        ZapposDataset(root, base_path, files_json_path,
-                      transform=transforms.Compose([
-                          transforms.Scale(112),
-                          transforms.CenterCrop(112),
-                          transforms.ToTensor(),
-                          normalize,
-                      ])),
-        batch_size=batch_size, shuffle=shuffle, **kwargs)
+    dataset = make_dataset(root, base_path, files_json_path)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+                                         shuffle=shuffle, **kwargs)
     return loader

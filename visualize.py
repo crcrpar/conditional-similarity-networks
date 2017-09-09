@@ -127,7 +127,7 @@ def main():
                         help='directory name of ut-zap50k-images')
     parser.add_argument('--files_json_path', default='filenames.json',
                         help='json file name which contains all the relative paths to images')
-    parser.add_argument('--batch_size', default=256,
+    parser.add_argument('--batch_size', default=256, type=int,
                         help='batch size')
     parser.add_argument('--conditions', default=None,
                         help='condition to visualize. default is all')
@@ -137,10 +137,12 @@ def main():
                         help='file to save features')
     parser.add_argument('--state_path',
                         default='runs/Conditional_Similarity_Network/model_best.pth.tar')
-    parser.add_argument('--n_components', default=2,
+    parser.add_argument('--n_components', default=2, type=int,
                         help='the number of dimensions to execute t-SNE')
     parser.add_argument('--cuda', default=1,
                         help='0 indicates CPU mode')
+    parser.add_argument('--debug', default=0,
+                        help='1 indicates debug')
     args = parser.parse_args()
 
     # extract feature
@@ -149,6 +151,25 @@ def main():
     else:
         assert args.conditions in [0, 1, 2, 3]
         conditions = list(args.conditions)
+
+    if args.debug:
+        import sys
+        print('###=== DEBUG ===###')
+        print('# check dataset')
+        dataset = zappos_data.make_dataset(args.root,
+                                           args.base_path,
+                                           args.files_json_path)
+        print('## len(dataset) = {}'.format(len(dataset)))
+        print('# check loader')
+        loader = torch.utils.data.DataLoader(dataset=dataset,
+                                             batch_size=args.batch_size,
+                                             shuffle=False,
+                                             num_workers=4,
+                                             pin_memory=True)
+        print('## len(loader) = {}'.format(len(loader)))
+        print('## loader.sampler = {}'.format(type(loader.sampler)))
+        sys.exit()
+
     feature_files_dict = dump_feature_files(
         args.root, args.base_path, args.files_json_path, args.batch_size,
         conditions, args.out_dir, args.out_file, args.state_path, args.cuda)
