@@ -80,7 +80,7 @@ def make_data_loader(condition, root='data', base_path='ut-zap50k-images',
         shuffle: default is False because I assume this loader is used
             for feature extranciton, not training.
     """
-    dataset = make_dataset(root, base_path, files_json_path, condition)
+    dataset = make_dataset(condition, root, base_path, files_json_path)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
                                          shuffle=shuffle, **kwargs)
     return loader
