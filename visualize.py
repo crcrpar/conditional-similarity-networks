@@ -68,8 +68,9 @@ def dump_feature_files(root, base_path, files_json_path, batch_size,
         path = os.path.join(out_dir, out_file.format(condition))
         feature_files_dict[condition] = path
         # prepare a loader
+        kwargs = {'num_workers': 4, 'pin_memory': True} if cuda else {}
         loader = zappos_data.make_data_loader(
-            root, base_path, files_json_path, path)
+            root, base_path, files_json_path, path, **kwargs)
         # start extracting features
         start_time = dt.now()
         path = os.path.join(out_dir, out_file.format(condition))
@@ -125,7 +126,7 @@ def main():
                         help='directory name of ut-zap50k-images')
     parser.add_argument('--files_json_path', default='filenames.json',
                         help='json file name which contains all the relative paths to images')
-    parser.add_argument('--batch_size', default=64,
+    parser.add_argument('--batch_size', default=256,
                         help='batch size')
     parser.add_argument('--conditions', default=None,
                         help='condition to visualize. default is all')
