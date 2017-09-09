@@ -125,6 +125,8 @@ def main():
                         help='directory name of ut-zap50k-images')
     parser.add_argument('--files_json_path', default='filenames.json',
                         help='json file name which contains all the relative paths to images')
+    parser.add_argument('--batch_size', default=64,
+                        help='batch size')
     parser.add_argument('--conditions', default=None,
                         help='condition to visualize. default is all')
     parser.add_argument('--out_dir', default='visualization',
