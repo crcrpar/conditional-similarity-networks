@@ -46,9 +46,8 @@ def extract_feature(model, loader, cuda):
 
 
 def dump_feature(model, loader, condition, path, cuda):
-    with open(path, 'a') as f:
-        for feature in extract_feature(model, loader, cuda):
-            np.savetxt(f, feature, delimiter='\t')
+    for idx, feature in enumerate(extract_feature(model, loader, cuda)):
+        np.savetxt(path.format(idx), feature, delimiter='\t')
 
 
 def dump_feature_files(root, base_path, files_json_path, batch_size,
@@ -132,7 +131,7 @@ def main():
                         help='condition to visualize. default is all')
     parser.add_argument('--out_dir', default='visualization',
                         help='directory to save features')
-    parser.add_argument('--out_file', default='condition_{}.tsv',
+    parser.add_argument('--out_file', default='condition_{}_idx_{}.tsv',
                         help='file to save features')
     parser.add_argument('--state_path',
                         default='runs/Conditional_Similarity_Network/model_best.pth.tar')
