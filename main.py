@@ -14,7 +14,7 @@ from triplet_image_loader import TripletImageLoader
 from tripletnet import CS_Tripletnet
 from visdom import Visdom
 import numpy as np
-import Resnet_18
+import resnet_18
 from csn import ConditionalSimNet
 
 # Training settings
@@ -118,7 +118,7 @@ def main():
                            ])),
         batch_size=args.batch_size, shuffle=True, **kwargs)
 
-    model = Resnet_18.resnet18(pretrained=True, embedding_size=args.dim_embed)
+    model = resnet_18.resnet18(pretrained=True, embedding_size=args.dim_embed)
     csn_model = ConditionalSimNet(model, n_conditions=len(conditions),
                                   embedding_size=args.dim_embed, learnedmask=args.learned, prein=args.prein)
     global mask_var
@@ -151,6 +151,7 @@ def main():
 
     if args.test:
         test_acc = test(test_loader, tnet, criterion, 1)
+        print('### test accuracy is {}'.format(test_acc))
         sys.exit()
 
     for epoch in range(args.start_epoch, args.epochs + 1):

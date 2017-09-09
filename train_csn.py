@@ -41,7 +41,8 @@ class AverageMeter(object):
 
 class Trainer(object):
 
-    def __init__(self, model, optimizer, accuracy, criterion, train_loader, val_loader, cuda):
+    def __init__(self, model, optimizer, accuracy, criterion, train_loader,
+                 val_loader, cuda):
         self.model = model
         self.optimizer = optimizer
         self.accuracy = accuracy
