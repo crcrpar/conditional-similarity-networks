@@ -33,7 +33,7 @@ def load_trained_csn(state_path, n_conditions=4, embedding_size=64):
 
 def get_mask(state_path, mask_cond=None, n_conditions=4, embedding_size=64):
     csn = load_trained_csn(state_path, n_conditions, embedding_size)
-    mask = csn.masks.data.numpy()
+    mask = csn.masks.weight.data.numpy()
     return mask
 
 
