@@ -10,8 +10,8 @@ import sklearn.base
 
 class BHTSNE(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin):
 
-    def __init__(self, dimensions=2, perplexity=30.0, theta=0.5, rand_seed=-1):
-        self.dimensions = dimensions
+    def __init__(self, n_dim=2, perplexity=30.0, theta=0.5, rand_seed=-1):
+        self.n_dim = n_dim
         self.perplexity = perplexity
         self.theta = theta
         self.rand_seed = rand_seed
