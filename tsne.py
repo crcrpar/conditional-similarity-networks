@@ -1,0 +1,25 @@
+r"""t-SNE implementation from iwiwi blog post.
+
+As you know, scikit-learn TSNE is slow.
+see, http://iwiwi.hatenadiary.jp/?page=1477023358
+"""
+import bhtsne
+import numpy as np
+import sklearn.base
+
+
+class BHTSNE(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin):
+
+    def __init__(self, dimensions=2, perplexity=30.0, theta=0.5, rand_seed=-1):
+        self.dimensions = dimensions
+        self.perplexity = perplexity
+        self.theta = theta
+        self.rand_seed = rand_seed
+
+    def fit_transform(self, x):
+        tsne = bhtsne.tsne(x.astype(np.float64),
+                           dimensions=self.dimensions,
+                           perplexity=self.perplexity,
+                           theta=self.theta,
+                           rand_seed=self.rand_seed)
+        return tsne
