@@ -146,7 +146,7 @@ def main():
                         help='batch size')
     parser.add_argument('--conditions', default=None,
                         help='condition to visualize. default is all')
-    parser.add_argument('--out_dir', default='visualization',
+    parser.add_argument('--out_dir', default=None,
                         help='directory to save features')
     parser.add_argument('--out_file', default='condition_{}.tsv',
                         help='file to save features')
@@ -195,8 +195,16 @@ def main():
                     x.requires_grad, x.volatile))
         sys.exit()
 
-    out_dir = os.path.join(args.out_dir,
-                           os.path.splitext(args.files_json_path)[0])
+    if args.out_dir is not None:
+        out_dir = os.path.join(args.out_dir,
+                               os.path.splitext(args.files_json_path)[0])
+    else:
+        out_dir = os.path.dirname(args.state_path)
+        if os.path.basename(args.state_path) == 'model_best.pth.tar':
+            out_dir = os.path.join(out_dir, 'features_best')
+        else:
+            name = os.path.splitext(os.path.basename(args.state_path))[0]
+            out_dir = os.path.join(out_dir, name)
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
     feature_files = dump_feature_files(
