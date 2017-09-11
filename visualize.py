@@ -31,6 +31,12 @@ def load_trained_csn(state_path, n_conditions=4, embedding_size=64):
     return csn
 
 
+def get_mask(state_path, mask_cond=None, n_conditions=4, embedding_size=64):
+    csn = load_trained_csn(state_path, n_conditions, embedding_size)
+    mask = csn.masks.data.numpy()
+    return mask
+
+
 def extract_feature(model, loader, cuda):
     for img_batch, c in tqdm.tqdm(loader, desc='feature extraction'):
         if cuda:
@@ -150,6 +156,8 @@ def main():
                         help='the number of dimensions to execute t-SNE')
     parser.add_argument('--cuda', default=1,
                         help='0 indicates CPU mode')
+    parser.add_argument('--tsne', default=0,
+                        help='run TSNE or not')
     parser.add_argument('--debug', default=0,
                         help='1 indicates debug')
     args = parser.parse_args()
@@ -194,9 +202,11 @@ def main():
     feature_files = dump_feature_files(
         args.root, args.base_path, args.files_json_path, args.batch_size,
         conditions, out_dir, args.out_file, args.state_path, args.cuda)
+
     # compress features to {args.n_components}-D
-    compressed_feature_file_paths = cluster_feature(feature_files,
-                                                    args.n_components)
+    if args.tsne:
+        compressed_feature_file_paths = cluster_feature(feature_files,
+                                                        args.n_components)
 
     '''
     for condition in tqdm.tqdm(conditions, desc='t-SNE'):
