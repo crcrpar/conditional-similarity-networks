@@ -18,8 +18,8 @@ class BHTSNE(sklearn.base.BaseEstimator, sklearn.base.TransformerMixin):
 
     def fit_transform(self, x):
         tsne = bhtsne.tsne(x.astype(np.float64),
-                           dimensions=self.dimensions,
+                           dimensions=self.n_dim,
                            perplexity=self.perplexity,
                            theta=self.theta,
-                           seed=self.seed)
+                           rand_seed=self.seed)
         return tsne
