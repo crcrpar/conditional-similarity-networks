@@ -1,40 +1,15 @@
 import argparse
 from datetime import datetime as dt
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import numpy as np
 import os
-import plotly.plotly as py
 
-from sklearn.manifold import TSNE
-from sklearn.preprocessing import LabelEncoder
-import torch
-from torch.autograd import Variable
+import numpy as np
 import tqdm
 
-from csn import ConditionalSimNet
-import resnet_18
-from tripletnet import CS_Tripletnet
+import torch
+from torch.autograd import Variable
+
+import utils
 import zappos_data
-
-
-def load_trained_csn(state_path, n_conditions=4, embedding_size=64):
-    """Load trained Conditional Similarity Network."""
-    cnn = resnet_18.resnet18()
-    csn = ConditionalSimNet(cnn, n_conditions, embedding_size)
-    tnet = CS_Tripletnet(csn)
-    ckpt = torch.load(state_path)
-    tnet.load_state_dict(ckpt['state_dict'])
-    tnet.eval()
-    csn = tnet.embeddingnet
-    return csn
-
-
-def get_mask(state_path, mask_cond=None, n_conditions=4, embedding_size=64):
-    csn = load_trained_csn(state_path, n_conditions, embedding_size)
-    mask = csn.masks.weight.data.numpy()
-    return mask
 
 
 def extract_feature(model, loader, cuda):
@@ -75,7 +50,7 @@ def dump_feature_files(root, base_path, files_json_path, batch_size,
 
     # load trained CSN
     print("... loading {}\n".format(state_path))
-    trained_csn = load_trained_csn(state_path)
+    trained_csn = utils.load_trained_csn(state_path)
     if cuda:
         trained_csn.cuda()
 
