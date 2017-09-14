@@ -5,10 +5,16 @@ This repository contains a [PyTorch](http://pytorch.org/) implementation of the 
 The code is based on the [PyTorch example for training ResNet on Imagenet](https://github.com/pytorch/examples/tree/master/imagenet) and the [Triplet Network example](https://github.com/andreasveit/triplet-network-pytorch).
 
 ## Table of Contents
+0. [Requirements](#Requirements)
 0. [Introduction](#introduction)
 0. [Usage](#usage)
 0. [Citing](#citing)
 0. [Contact](#contact)
+
+## Requirements
+- pytorch
+- sklearn
+- bhtsne (for t-SNE)
 
 ## Introduction
 What makes images similar? To measure the similarity between images, they are typically embedded in a feature-vector space, in which their distance preserve the relative dissimilarity. However, when learning such similarity embeddings the simplifying assumption is commonly made that images are only compared to one unique measure of similarity.
