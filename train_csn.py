@@ -270,7 +270,7 @@ def test(args, conditions, test_loader, triplet_net, criterion, epoch):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
+    parser = argparse.ArgumentParser(description='This is a WIP program')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--epochs', type=int, default=200, metavar='N',
