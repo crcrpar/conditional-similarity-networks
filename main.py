@@ -156,7 +156,8 @@ def main():
 
     for epoch in range(args.start_epoch, args.epochs + 1):
         # update learning rate
-        adjust_learning_rate(optimizer, epoch)
+        if (epoch - 1) % 30 == 0:
+            adjust_learning_rate(optimizer, epoch)
         # train for one epoch
         train(train_loader, tnet, criterion, optimizer, epoch)
         # evaluate on validation set
